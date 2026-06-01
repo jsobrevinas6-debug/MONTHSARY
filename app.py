@@ -14,6 +14,7 @@ app.config['MYSQL_DB'] = config.MYSQL_DB
 app.config['MYSQL_PORT'] = config.MYSQL_PORT
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 app.config['MYSQL_CONNECT_TIMEOUT'] = 10
+print(f"App starting with MySQL: {config.MYSQL_HOST}:{config.MYSQL_PORT}")
 app.config['UPLOAD_FOLDER'] = config.UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = config.MAX_CONTENT_LENGTH
 mysql = MySQL(app)
