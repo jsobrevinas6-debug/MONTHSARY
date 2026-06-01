@@ -427,6 +427,7 @@
   {% if error %}
   <p class="error-msg">{{ error }}</p>
   {% endif %}
+  <p class="error-msg" id="date-error" style="display:none;">awww you don't love me anymore, you don't know our anniversary 💔</p>
 
   <form id="date-form" method="POST" action="/" onsubmit="return showPopup(event)">
     <label for="anniversary_date">Our Anniversary Date</label>
@@ -563,6 +564,13 @@
       input.focus();
       return false;
     }
+    if (input.value !== '2026-04-06') {
+      document.getElementById('date-error').style.display = 'block';
+      input.value = '';
+      input.focus();
+      return false;
+    }
+    document.getElementById('date-error').style.display = 'none';
     const card = document.getElementById('front-card');
     card.classList.add('burst');
     setTimeout(() => {
