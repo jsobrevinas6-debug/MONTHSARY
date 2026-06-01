@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Justin & Madea 🌸</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<div class="main-inner">
+  <div class="hero-roses">🌸 🌷 🌸</div>
+
+  <div class="counter-box">
+    <h2>Justin <em>&</em> Madea</h2>
+    <p class="tagline">Together since {{ start_date }}</p>
+    <div class="months-count">{{ months }}</div>
+    <div class="months-label">Month{{ 's' if months != 1 else '' }} Together</div>
+    <div class="days-row">
+      <div class="day-chip">🎀 {{ ordinal }} Monthsary</div>
+    </div>
+  </div>
+
+  <!-- Memories Section -->
+  <div class="memories-section">
+    <div class="memories-header">
+      <h3>Our Memories 💌</h3>
+      <a href="/add-memory" class="add-btn">+ Add Memory</a>
+    </div>
+
+    {% if memories %}
+    <div class="memories-grid">
+      {% for memory in memories %}
+      <div class="memory-card-wrap">
+        <div class="memory-menu">
+          <button class="three-dot-btn" onclick="toggleMenu(event, 'menu-{{ memory[0] }}')">⋮</button>
+          <div class="menu-dropdown" id="menu-{{ memory[0] }}">
+            <a href="/edit-memory/{{ memory[0] }}">✏️ Edit</a>
+            <a href="/delete-memory/{{ memory[0] }}" onclick="return confirm('Delete this memory?')">🗑️ Delete</a>
+          </div>
+        </div>
+        <a href="/memory/{{ memory[0] }}" class="memory-card">
+          <div class="memory-number">{{ memory[2] }}{% if memory[2] == 1 %}st{% elif memory[2] == 2 %}nd{% elif memory[2] == 3 %}rd{% else %}th{% endif %}</div>
+          <div class="memory-title">{{ memory[1] }}</div>
+          <div class="memory-date">{{ memory[3] }}</div>
+          <div class="memory-caption">{{ memory[4][:60] + '...' if memory[4] and memory[4]|length > 60 else memory[4] }}</div>
+          <div class="memory-arrow">→</div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-memories">
+      <p>No memories yet... add your first one! 🌷</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  const emojis = ['🌸','🌷','🌹','💮','🌺'];
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.fontSize = (1 + Math.random() * 1.2) + 'rem';
+    p.style.animationDuration = (6 + Math.random() * 10) + 's';
+    p.style.animationDelay = (Math.random() * 10) + 's';
+    document.body.appendChild(p);
+  }
+
+  function toggleMenu(e, id) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.querySelectorAll('.menu-dropdown').forEach(d => {
+      if (d.id !== id) d.classList.remove('open');
+    });
+    document.getElementById(id).classList.toggle('open');
+  }
+
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.menu-dropdown').forEach(d => d.classList.remove('open'));
+  });
+</script>
+</body>
+</html>

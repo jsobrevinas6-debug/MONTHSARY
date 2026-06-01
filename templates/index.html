@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>For Madea</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+<style>
+  .popup-overlay,
+  .surprise-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 224, 232, 0.5);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .popup-overlay.show,
+  .surprise-overlay.show { display: flex; }
+
+  .popup-box {
+    background: rgba(255,255,255,0.96);
+    border: 1.5px solid rgba(255,180,200,0.65);
+    border-radius: 28px;
+    padding: 52px 48px 44px;
+    text-align: center;
+    max-width: 410px;
+    width: 92vw;
+    box-shadow: 0 16px 60px rgba(220,100,130,0.2);
+    animation: popIn 0.5s cubic-bezier(.22,1,.36,1) both;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.86) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .popup-emoji {
+    display: block;
+    margin-bottom: 18px;
+    font-size: 2.4rem;
+    letter-spacing: 8px;
+  }
+
+  .popup-title {
+    font-family: "Playfair Display", serif;
+    font-size: 2rem;
+    color: #e07090;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+
+  .popup-title em {
+    font-style: italic;
+    color: #c4607a;
+  }
+
+  .popup-sub {
+    font-size: 0.8rem;
+    color: #c09090;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 34px;
+  }
+
+  .popup-open-btn {
+    display: inline-block;
+    width: 100%;
+    padding: 14px 40px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #e87090, #f4a0b0);
+    color: #fff;
+    font-family: "Playfair Display", serif;
+    font-size: 1.05rem;
+    font-style: italic;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .popup-open-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(220,100,130,0.3);
+  }
+
+  .surprise-shell {
+    width: min(1180px, 100%);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    padding: 6px;
+  }
+
+  .surprise {
+    display: grid;
+    grid-template-columns: minmax(230px, 0.9fr) minmax(260px, 0.82fr) minmax(250px, 0.9fr);
+    gap: 22px;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .panel {
+    min-width: 0;
+    background: rgba(255, 250, 246, 0.86);
+    border: 1px solid rgba(217, 91, 124, 0.22);
+    box-shadow: 0 22px 70px rgba(143, 58, 82, 0.13);
+    backdrop-filter: blur(16px);
+    border-radius: 8px;
+    padding: 24px;
+  }
+
+  .section-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+    margin-bottom: 22px;
+    color: #8f3a52;
+    font-family: "Playfair Display", serif;
+    font-size: 1.28rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .polaroids {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    justify-content: center;
+  }
+
+  .polaroid {
+    width: min(100%, 240px);
+    margin: 0 auto;
+    padding: 12px 12px 42px;
+    background: #fff;
+    border: 1px solid rgba(143, 58, 82, 0.12);
+    box-shadow: 0 14px 26px rgba(143, 58, 82, 0.18);
+    position: relative;
+  }
+
+  .polaroid:nth-child(1) { transform: rotate(-3deg); }
+  .polaroid:nth-child(2) { transform: rotate(2.5deg); }
+
+  .polaroid::before {
+    content: "";
+    position: absolute;
+    width: 68px;
+    height: 20px;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-2deg);
+    background: rgba(255, 239, 193, 0.72);
+    box-shadow: 0 2px 5px rgba(143, 58, 82, 0.08);
+  }
+
+  .polaroid img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: block;
+    object-fit: cover;
+    background: #f5e6e1;
+  }
+
+  .caption,
+  .video-caption {
+    font-family: "Caveat", cursive;
+    color: #85515f;
+    text-align: center;
+  }
+
+  .caption {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 10px;
+    font-size: 1.28rem;
+    line-height: 1;
+  }
+
+  .letter-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 26px;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.66)),
+      repeating-linear-gradient(#fffaf6 0 31px, rgba(217, 91, 124, 0.14) 32px);
+  }
+
+  .letter {
+    font-family: "Caveat", cursive;
+    font-size: clamp(1.28rem, 2.2vw, 1.72rem);
+    line-height: 1.28;
+    color: #744555;
+  }
+
+  .letter p + p { margin-top: 16px; }
+
+  .signature {
+    margin-top: 24px;
+    font-family: "Caveat", cursive;
+    font-size: clamp(1.45rem, 2.4vw, 1.9rem);
+    color: #d95b7c;
+    text-align: right;
+  }
+
+  .surprise-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .surprise-btn {
+    width: 100%;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #e87090, #f4a0b0);
+    color: #fff;
+    font-family: "Playfair Display", serif;
+    font-size: 1rem;
+    font-style: italic;
+    cursor: pointer;
+  }
+
+  .surprise-btn.secondary {
+    background: rgba(255, 255, 255, 0.82);
+    color: #b05070;
+    border: 1px solid rgba(224, 112, 144, 0.32);
+  }
+
+  .videos {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 18px;
+  }
+
+  .video-card {
+    padding: 10px 10px 14px;
+    background: #fff;
+    border: 1px solid rgba(143, 58, 82, 0.12);
+    box-shadow: 0 14px 26px rgba(143, 58, 82, 0.14);
+    transform: rotate(2deg);
+  }
+
+  .video-card:nth-child(3) { transform: rotate(-2deg); }
+
+  video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
+    background: #1d1518;
+  }
+
+  .video-caption {
+    margin-top: 10px;
+    font-size: 1.24rem;
+  }
+
+  #confetti-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99;
+    display: none;
+  }
+
+  /* Arrow + Heart Button */
+  .arrow-heart-btn {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 40px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #e87090, #f4a0b0);
+    color: #fff;
+    font-family: "Playfair Display", serif;
+    font-size: 1.05rem;
+    font-style: italic;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .arrow-heart-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(220,100,130,0.3);
+  }
+  .btn-arrow {
+    display: inline-block;
+    font-style: normal;
+    font-size: 1.15rem;
+    animation: arrowBounce 1.1s ease-in-out infinite;
+  }
+  .btn-heart {
+    display: inline-block;
+    font-style: normal;
+    font-size: 1rem;
+    animation: heartBeat 1.1s ease-in-out infinite;
+  }
+  @keyframes arrowBounce {
+    0%, 100% { transform: translateX(0); }
+    50%       { transform: translateX(7px); }
+  }
+  @keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    30%       { transform: scale(1.4); }
+    60%       { transform: scale(0.88); }
+  }
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.45);
+    transform: scale(0);
+    animation: rippleAnim 0.6s linear;
+    pointer-events: none;
+  }
+  @keyframes rippleAnim {
+    to { transform: scale(4); opacity: 0; }
+  }
+  .card.burst {
+    animation: burstOut 0.42s cubic-bezier(.22,1,.36,1) forwards;
+  }
+  @keyframes burstOut {
+    0%   { transform: scale(1);    opacity: 1; }
+    60%  { transform: scale(1.06); opacity: 0.6; }
+    100% { transform: scale(0.88); opacity: 0; }
+  }
+
+  /* Cupid Scene */
+  #cupid-scene {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    overflow: hidden;
+    background: rgba(0,0,0,0.15);
+  }
+  #cupid-scene.active { display: flex; align-items: center; justify-content: center; }
+
+  #cupid-video {
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+  }
+
+  #hearts-burst {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #hearts-burst.grow {
+    animation: heartGrow 1.2s cubic-bezier(.22,1,.36,1) forwards;
+  }
+  #hearts-burst.explode {
+    animation: heartExplode 0.5s cubic-bezier(.6,0,.8,1) forwards;
+  }
+  @keyframes heartGrow {
+    0%   { opacity: 0; font-size: 2rem;  }
+    40%  { opacity: 1; font-size: 12rem; }
+    100% { opacity: 1; font-size: 22rem; }
+  }
+  @keyframes heartExplode {
+    0%   { opacity: 1; font-size: 22rem; filter: blur(0px);   }
+    60%  { opacity: 0.6; font-size: 38rem; filter: blur(8px);  }
+    100% { opacity: 0;   font-size: 55rem; filter: blur(24px); }
+  }
+
+  @media (max-width: 900px) {
+    .surprise {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .panel { padding: 20px; }
+
+    .polaroids {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 18px;
+    }
+
+    .polaroid { width: min(100%, 230px); }
+  }
+
+  @media (max-width: 560px) {
+    .popup-box { padding: 38px 24px 32px; }
+    .popup-title { font-size: 1.7rem; }
+    .section-title { font-size: 1.12rem; margin-bottom: 18px; }
+    .panel { padding: 16px; }
+    .polaroids { display: grid; grid-template-columns: 1fr; }
+    .polaroid { width: min(84vw, 260px); }
+    .letter { font-size: 1.28rem; }
+    .surprise-actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<div class="card" id="front-card">
+  <span class="roses">&#127800;&#127799;&#127800;</span>
+  <h1>For <em>Madea</em></h1>
+  <p class="subtitle">A little surprise from Justin</p>
+
+  {% if error %}
+  <p class="error-msg">{{ error }}</p>
+  {% endif %}
+
+  <form id="date-form" method="POST" action="/" onsubmit="return showPopup(event)">
+    <label for="anniversary_date">Our Anniversary Date</label>
+    <div class="input-wrap">
+      <input type="date" id="anniversary_date" name="anniversary_date" required/>
+    </div>
+    <button type="submit" class="arrow-heart-btn" id="open-btn">
+      <span class="btn-arrow">&#10140;</span>
+      <span class="btn-heart">&#10084;</span>
+      <span class="btn-text">I Love You!</span>
+    </button>
+  </form>
+
+  <p class="footer-note">Enter the date we started and see something sweet</p>
+</div>
+
+<div class="popup-overlay" id="popup-overlay">
+  <div class="popup-box">
+    <span class="popup-emoji">&#127800;&#127799;&#127800;</span>
+    <div class="popup-title">Happy <em>2nd Monthsary</em></div>
+    <p class="popup-sub">Justin & Madea</p>
+    <button class="popup-open-btn" type="button" onclick="startArrowAnimation()">Go to Homepage</button>
+  </div>
+</div>
+
+<div class="surprise-overlay" id="surprise-overlay">
+  <div class="surprise-shell">
+    <section class="surprise" aria-label="Monthsary surprise">
+      <aside class="panel">
+        <h2 class="section-title">Pictures</h2>
+        <div class="polaroids">
+          <figure class="polaroid">
+            <img src="{{ url_for('static', filename='uploads/picture1.jpg') }}" alt="Justin and Madea memory"/>
+            <figcaption class="caption">our memory</figcaption>
+          </figure>
+          <figure class="polaroid">
+            <img src="{{ url_for('static', filename='uploads/picture2.jpg') }}" alt="A favorite photo memory"/>
+            <figcaption class="caption">my favorite photo</figcaption>
+          </figure>
+          <figure class="polaroid">
+            <img src="{{ url_for('static', filename='uploads/picture3.jpg') }}" alt="Another sweet memory"/>
+            <figcaption class="caption">another sweet memory</figcaption>
+          </figure>
+        </div>
+      </aside>
+
+      <section class="panel letter-panel">
+        <h2 class="section-title">Letter</h2>
+        <div class="letter">
+          <p>Hi baby,</p>
+          <p>I hope you appreciate this small surprise I made for you. Happy 2nd Monthsary, baby.</p>
+          <p>I know the past days have been hard, and I am sorry for the hurt I caused your precious heart. I never wanted to make you feel that way.</p>
+          <p>I love you so much, and I will keep choosing you, understanding you, and making it up to you every day.</p>
+          <p>Thank you for staying, for loving me, and for being my everything.</p>
+        </div>
+        <div class="signature">Justin</div>
+        <div class="surprise-actions">
+          <button class="surprise-btn secondary" type="button" onclick="backToGreeting()">Back</button>
+          <button class="surprise-btn" type="button" onclick="submitForm()">Homepage</button>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <h2 class="section-title">Videos</h2>
+        <div class="videos">
+          <figure class="video-card">
+            <video controls preload="metadata">
+              <source src="{{ url_for('static', filename='uploads/videoo2.mp4') }}" type="video/mp4"/>
+              Your browser does not support the video tag.
+            </video>
+            <figcaption class="video-caption">video memory</figcaption>
+          </figure>
+          <figure class="video-card">
+            <video controls preload="metadata">
+              <source src="{{ url_for('static', filename='uploads/video1.mp4') }}" type="video/mp4"/>
+              Your browser does not support the video tag.
+            </video>
+            <figcaption class="video-caption">another moment</figcaption>
+          </figure>
+          <figure class="video-card">
+            <video controls preload="metadata">
+              <source src="{{ url_for('static', filename='uploads/video3.mp4') }}" type="video/mp4"/>
+              Your browser does not support the video tag.
+            </video>
+            <figcaption class="video-caption">one more memory</figcaption>
+          </figure>
+        </div>
+      </aside>
+    </section>
+  </div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+
+<div id="cupid-scene">
+  <video id="cupid-video" src="{{ url_for('static', filename='uploads/cupid.mp4') }}" playsinline muted></video>
+  <div id="hearts-burst">❤️</div>
+</div>
+
+<audio id="bg-music" src="{{ url_for('static', filename='uploads/download.mp3') }}" loop></audio>
+
+<script>
+  const petals = ["\u273f", "\u2740", "\u273d", "\u2665"];
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement("div");
+    p.className = "petal";
+    p.textContent = petals[Math.floor(Math.random() * petals.length)];
+    p.style.left = Math.random() * 100 + "vw";
+    p.style.color = i % 4 === 0 ? "#9dbd9a" : "#e07090";
+    p.style.fontSize = (1 + Math.random() * 1.2) + "rem";
+    p.style.animationDuration = (6 + Math.random() * 10) + "s";
+    p.style.animationDelay = (Math.random() * 10) + "s";
+    document.body.appendChild(p);
+  }
+
+  // Ripple effect on button click
+  document.getElementById('open-btn').addEventListener('click', function(e) {
+    const btn = this;
+    const circle = document.createElement('span');
+    const diameter = Math.max(btn.clientWidth, btn.clientHeight);
+    const radius = diameter / 2;
+    circle.style.width = circle.style.height = diameter + 'px';
+    circle.style.left = (e.clientX - btn.getBoundingClientRect().left - radius) + 'px';
+    circle.style.top  = (e.clientY - btn.getBoundingClientRect().top  - radius) + 'px';
+    circle.classList.add('ripple');
+    btn.querySelector('.ripple') && btn.querySelector('.ripple').remove();
+    btn.appendChild(circle);
+  });
+
+  function showPopup(e) {
+    e.preventDefault();
+    const input = document.getElementById("anniversary_date");
+    if (!input.value) {
+      input.focus();
+      return false;
+    }
+    const card = document.getElementById('front-card');
+    card.classList.add('burst');
+    setTimeout(() => {
+      document.getElementById("popup-overlay").classList.add("show");
+      startConfetti();
+    }, 380);
+    return false;
+  }
+
+  function startArrowAnimation() {
+    document.getElementById('popup-overlay').classList.remove('show');
+    const scene = document.getElementById('cupid-scene');
+    const video = document.getElementById('cupid-video');
+    const hearts = document.getElementById('hearts-burst');
+    const music = document.getElementById('bg-music');
+    scene.classList.add('active');
+    video.currentTime = 0;
+    video.play();
+    music.currentTime = 0;
+    music.play();
+    video.onended = function() {
+      hearts.classList.add('grow');
+      setTimeout(() => {
+        hearts.classList.remove('grow');
+        hearts.classList.add('explode');
+        setTimeout(() => {
+          scene.classList.remove('active');
+          hearts.classList.remove('explode');
+          showSurprise();
+        }, 500);
+      }, 1200);
+    };
+  }
+
+  function showSurprise() {
+    document.getElementById("popup-overlay").classList.remove("show");
+    document.getElementById("surprise-overlay").classList.add("show");
+
+    // pause music when any video plays, resume when it pauses/ends
+    document.querySelectorAll('.video-card video').forEach(vid => {
+      vid.addEventListener('play', () => {
+        document.getElementById('bg-music').pause();
+        // pause all other videos
+        document.querySelectorAll('.video-card video').forEach(other => {
+          if (other !== vid) {
+            other.pause();
+            other.currentTime = 0;
+          }
+        });
+      });
+      vid.addEventListener('pause', () => {
+        if (!vid.ended) document.getElementById('bg-music').play();
+      });
+      vid.addEventListener('ended', () => {
+        document.getElementById('bg-music').play();
+      });
+    });
+  }
+
+  function backToGreeting() {
+    document.getElementById("surprise-overlay").classList.remove("show");
+    // stop all videos
+    document.querySelectorAll('.video-card video').forEach(vid => {
+      vid.pause();
+      vid.currentTime = 0;
+    });
+    const music = document.getElementById('bg-music');
+    music.pause();
+    music.currentTime = 0;
+    document.getElementById("popup-overlay").classList.add("show");
+  }
+
+  function submitForm() {
+    document.getElementById('bg-music').pause();
+    document.getElementById('bg-music').currentTime = 0;
+    document.getElementById("date-form").submit();
+  }
+
+  function startConfetti() {
+    const canvas = document.getElementById("confetti-canvas");
+    canvas.style.display = "block";
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext("2d");
+    const pieces = [];
+    const colors = ["#e87090", "#f4a0b0", "#fde2b3", "#f7c6d4", "#dce8fb", "#9dbd9a"];
+
+    for (let i = 0; i < 120; i++) {
+      pieces.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        w: Math.random() * 10 + 5,
+        h: Math.random() * 6 + 3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        speed: Math.random() * 3 + 1,
+        angle: Math.random() * 360,
+        spin: Math.random() * 4 - 2,
+        opacity: Math.random() * 0.7 + 0.3
+      });
+    }
+
+    let frame;
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach(piece => {
+        ctx.save();
+        ctx.globalAlpha = piece.opacity;
+        ctx.translate(piece.x + piece.w / 2, piece.y + piece.h / 2);
+        ctx.rotate(piece.angle * Math.PI / 180);
+        ctx.fillStyle = piece.color;
+        ctx.fillRect(-piece.w / 2, -piece.h / 2, piece.w, piece.h);
+        ctx.restore();
+
+        piece.y += piece.speed;
+        piece.angle += piece.spin;
+        if (piece.y > canvas.height) {
+          piece.y = -10;
+          piece.x = Math.random() * canvas.width;
+        }
+      });
+      frame = requestAnimationFrame(draw);
+    }
+
+    draw();
+    setTimeout(() => {
+      cancelAnimationFrame(frame);
+      canvas.style.display = "none";
+    }, 4000);
+  }
+</script>
+</body>
+</html>

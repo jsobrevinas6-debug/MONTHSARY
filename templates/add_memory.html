@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Add Memory 🌸</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+
+<div class="form-card">
+  <a href="/home" class="back-btn">← Back</a>
+  <span class="roses">🌷</span>
+  <h1>Add a <em>Memory</em></h1>
+  <p class="subtitle">Capture this beautiful moment</p>
+
+  <form method="POST" action="/add-memory" enctype="multipart/form-data">
+    <label>Memory Title</label>
+    <input type="text" name="title" placeholder="e.g. 1st Monthsary" required/>
+
+    <label>Monthsary Number</label>
+    <input type="number" name="monthsary_number" placeholder="e.g. 1" min="1" required/>
+
+    <label>Date</label>
+    <input type="date" name="date" required/>
+
+    <label>Caption / Message</label>
+    <textarea name="caption" rows="4" placeholder="Write something sweet about this day..."></textarea>
+
+    <label>Photos / Videos</label>
+    <div class="upload-area">
+      <input type="file" name="files" multiple accept="image/*,video/*" id="file-input"/>
+      <label for="file-input" class="upload-label">Choose Photos or Videos</label>
+      <span id="file-count"></span>
+    </div>
+
+    <button type="submit">Save Memory 🌸</button>
+  </form>
+</div>
+</body>
+</html>
