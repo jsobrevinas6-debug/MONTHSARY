@@ -17,18 +17,18 @@
   <h1>Edit <em>Memory</em></h1>
   <p class="subtitle">Update this beautiful moment</p>
 
-  <form method="POST" action="/edit-memory/{{ memory[0] }}">
+  <form method="POST" action="/edit-memory/{{ memory['id'] }}">
     <label>Memory Title</label>
-    <input type="text" name="title" value="{{ memory[1] }}" required/>
+    <input type="text" name="title" value="{{ memory['title'] }}" required/>
 
     <label>Monthsary Number</label>
-    <input type="number" name="monthsary_number" value="{{ memory[2] }}" min="1" required/>
+    <input type="number" name="monthsary_number" value="{{ memory['monthsary_number'] }}" min="1" required/>
 
     <label>Date</label>
-    <input type="date" name="date" value="{{ memory[3] }}" required/>
+    <input type="date" name="date" value="{{ memory['date'] }}" required/>
 
     <label>Caption / Message</label>
-    <textarea name="caption" rows="4">{{ memory[4] }}</textarea>
+    <textarea name="caption" rows="4">{{ memory['caption'] }}</textarea>
 
     <button type="submit">Save Changes 🌸</button>
   </form>

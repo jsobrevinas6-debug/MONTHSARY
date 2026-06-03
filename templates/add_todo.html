@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Add To Do</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<div class="form-card">
+  <span class="roses">💕</span>
+  <h1>Add To Do</h1>
+  <p class="subtitle">With my LOML</p>
+
+  <form method="POST">
+    <label>What do you want to do?</label>
+    <input type="text" name="item" required placeholder="Enter activity..."/>
+    <button type="submit">Add ✨</button>
+  </form>
+
+  <p class="footer-note"><a href="/home" class="back-btn">← Back to Home</a></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Edit To Do List</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<div class="form-card">
+  <span class="roses">✏️</span>
+  <h1>Edit To Do List</h1>
+  <p class="subtitle">Update your plans</p>
+
+  <form method="POST">
+    {% for todo in todos %}
+    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+      <input type="hidden" name="todo_id" value="{{ todo['id'] }}"/>
+      <input type="text" name="item" value="{{ todo['item'] }}" style="margin-bottom: 0; flex: 1;"/>
+      <a href="/delete-todo/{{ todo['id'] }}" onclick="return confirm('Delete this item?')" style="color: #d06070; text-decoration: none; font-size: 1.2rem;">🗑️</a>
+    </div>
+    {% endfor %}
+    <button type="submit" style="margin-top: 16px;">Save Changes</button>
+  </form>
+
+  <p class="footer-note"><a href="/home" class="back-btn">← Back to Home</a></p>
+</div>
+</body>
+</html>

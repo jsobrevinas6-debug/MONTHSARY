@@ -15,49 +15,71 @@
 <div class="main-inner">
   <div class="hero-roses">🌸 🌷 🌸</div>
 
-  <div class="counter-box">
-    <h2>Justin <em>&</em> Madea</h2>
-    <p class="tagline">Together since {{ start_date }}</p>
-    <div class="months-count">{{ months }}</div>
-    <div class="months-label">Month{{ 's' if months != 1 else '' }} Together</div>
-    <div class="days-row">
-      <div class="day-chip">🎀 {{ ordinal }} Monthsary</div>
-    </div>
-  </div>
-
-  <!-- Memories Section -->
-  <div class="memories-section">
-    <div class="memories-header">
-      <h3>Our Memories 💌</h3>
-      <a href="/add-memory" class="add-btn">+ Add Memory</a>
-    </div>
-
-    {% if memories %}
-    <div class="memories-grid">
-      {% for memory in memories %}
-      <div class="memory-card-wrap">
-        <div class="memory-menu">
-          <button class="three-dot-btn" onclick="toggleMenu(event, 'menu-{{ memory[0] }}')">⋮</button>
-          <div class="menu-dropdown" id="menu-{{ memory[0] }}">
-            <a href="/edit-memory/{{ memory[0] }}">✏️ Edit</a>
-            <a href="/delete-memory/{{ memory[0] }}" onclick="return confirm('Delete this memory?')">🗑️ Delete</a>
-          </div>
+  <div class="content-wrapper">
+    <div class="left-section">
+      <div class="counter-box">
+        <h2>Justin <em>&</em> Madea</h2>
+        <p class="tagline">Together since {{ start_date }}</p>
+        <div class="months-count">{{ months }}</div>
+        <div class="months-label">Month{{ 's' if months != 1 else '' }} Together</div>
+        <div class="days-row">
+          <div class="day-chip">🎀 {{ ordinal }} Monthsary</div>
         </div>
-        <a href="/memory/{{ memory[0] }}" class="memory-card">
-          <div class="memory-number">{{ memory[2] }}{% if memory[2] == 1 %}st{% elif memory[2] == 2 %}nd{% elif memory[2] == 3 %}rd{% else %}th{% endif %}</div>
-          <div class="memory-title">{{ memory[1] }}</div>
-          <div class="memory-date">{{ memory[3] }}</div>
-          <div class="memory-caption">{{ memory[4][:60] + '...' if memory[4] and memory[4]|length > 60 else memory[4] }}</div>
-          <div class="memory-arrow">→</div>
-        </a>
       </div>
-      {% endfor %}
+
+      <!-- Memories Section -->
+      <div class="memories-section">
+        <div class="memories-header">
+          <h3>Our Memories 💌</h3>
+          <a href="/add-memory" class="add-btn">+ Add Memory</a>
+        </div>
+
+        {% if memories %}
+        <div class="memories-grid">
+          {% for memory in memories %}
+          <div class="memory-card-wrap">
+            <div class="memory-menu">
+              <button class="three-dot-btn" onclick="toggleMenu(event, 'menu-{{ memory[\'id\'] }}')">⋮</button>
+              <div class="menu-dropdown" id="menu-{{ memory['id'] }}">
+                <a href="/edit-memory/{{ memory['id'] }}">✏️ Edit</a>
+                <a href="/delete-memory/{{ memory['id'] }}" onclick="return confirm('Delete this memory?')">🗑️ Delete</a>
+              </div>
+            </div>
+            <a href="/memory/{{ memory['id'] }}" class="memory-card">
+              <div class="memory-number">{{ memory['monthsary_number'] }}{% if memory['monthsary_number'] == 1 %}st{% elif memory['monthsary_number'] == 2 %}nd{% elif memory['monthsary_number'] == 3 %}rd{% else %}th{% endif %}</div>
+              <div class="memory-title">{{ memory['title'] }}</div>
+              <div class="memory-date">{{ memory['date'] }}</div>
+              <div class="memory-caption">{{ memory['caption'][:60] + '...' if memory['caption'] and memory['caption']|length > 60 else memory['caption'] }}</div>
+              <div class="memory-arrow">→</div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-memories">
+          <p>No memories yet... add your first one! 🌷</p>
+        </div>
+        {% endif %}
+      </div>
     </div>
-    {% else %}
-    <div class="no-memories">
-      <p>No memories yet... add your first one! 🌷</p>
+
+    <div class="right-section">
+      <div class="todo-box">
+        <div class="todo-header">
+          <h3>To Do with my LOML 💕</h3>
+          <button class="edit-btn" onclick="window.location.href='/edit-todo'">✏️</button>
+        </div>
+        <ul class="todo-list">
+          {% for todo in todos %}
+          <li class="{% if todo['completed'] == 1 %}completed{% endif %}">
+            <input type="checkbox" data-id="{{ todo['id'] }}" {% if todo['completed'] == 1 %}checked{% endif %} onchange="toggleTodo(this)">
+            <span>{{ todo['item'] }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        <button class="add-more-btn" onclick="window.location.href='/add-todo'">+ Add More</button>
+      </div>
     </div>
-    {% endif %}
   </div>
 </div>
 
@@ -86,6 +108,16 @@
   document.addEventListener('click', () => {
     document.querySelectorAll('.menu-dropdown').forEach(d => d.classList.remove('open'));
   });
+
+  function toggleTodo(el) {
+    const id = el.dataset.id;
+    const checked = el.checked;
+    fetch('/toggle-todo/' + id, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({completed: checked})
+    });
+  }
 </script>
 </body>
 </html>

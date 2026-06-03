@@ -58,6 +58,8 @@ def home():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM memories ORDER BY monthsary_number ASC")
     memories = cur.fetchall()
+    cur.execute("SELECT * FROM todos ORDER BY id ASC")
+    todos = cur.fetchall()
     cur.close()
 
     return render_template('home.html',
@@ -65,7 +67,8 @@ def home():
                            start_date=start_str,
                            months=months,
                            ordinal=ordinal(months),
-                           memories=memories)
+                           memories=memories,
+                           todos=todos)
 
 # ── Add a new memory ──
 @app.route('/add-memory', methods=['GET', 'POST'])
@@ -178,5 +181,92 @@ def delete_media(media_id, memory_id):
     cur.close()
     return redirect(url_for('memory', memory_id=memory_id))
 
+# ── Add todo ──
+@app.route('/add-todo', methods=['GET', 'POST'])
+def add_todo():
+    if request.method == 'POST':
+        item = request.form['item']
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO todos (item) VALUES (%s)", (item,))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('home'))
+    return render_template('add_todo.html')
+
+# ── Edit todos ──
+@app.route('/edit-todo', methods=['GET', 'POST'])
+def edit_todo():
+    cur = mysql.connection.cursor()
+    if request.method == 'POST':
+        todo_ids = request.form.getlist('todo_id')
+        todo_items = request.form.getlist('item')
+        for tid, item in zip(todo_ids, todo_items):
+            cur.execute("UPDATE todos SET item=%s WHERE id=%s", (item, tid))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('home'))
+    cur.execute("SELECT * FROM todos ORDER BY id ASC")
+    todos = cur.fetchall()
+    cur.close()
+    return render_template('edit_todo.html', todos=todos)
+
+# ── Delete todo ──
+@app.route('/delete-todo/<int:todo_id>')
+def delete_todo(todo_id):
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM todos WHERE id = %s", (todo_id,))
+    mysql.connection.commit()
+    cur.close()
+    return redirect(url_for('edit_todo'))
+
+# ── Toggle todo completion ──
+@app.route('/toggle-todo/<int:todo_id>', methods=['POST'])
+def toggle_todo(todo_id):
+    data = request.get_json()
+    completed = data.get('completed', False)
+    cur = mysql.connection.cursor()
+    cur.execute("UPDATE todos SET completed = %s WHERE id = %s", (completed, todo_id))
+    mysql.connection.commit()
+    cur.close()
+    return {'status': 'success'}
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+# ── Add todo ──
+@app.route('/add-todo', methods=['GET', 'POST'])
+def add_todo():
+    if request.method == 'POST':
+        item = request.form['item']
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO todos (item) VALUES (%s)", (item,))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('home'))
+    return render_template('add_todo.html')
+
+# ── Edit todos ──
+@app.route('/edit-todo', methods=['GET', 'POST'])
+def edit_todo():
+    cur = mysql.connection.cursor()
+    if request.method == 'POST':
+        todo_ids = request.form.getlist('todo_id')
+        todo_items = request.form.getlist('item')
+        for tid, item in zip(todo_ids, todo_items):
+            cur.execute("UPDATE todos SET item=%s WHERE id=%s", (item, tid))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('home'))
+    cur.execute("SELECT * FROM todos ORDER BY id ASC")
+    todos = cur.fetchall()
+    cur.close()
+    return render_template('edit_todo.html', todos=todos)
+
+# ── Delete todo ──
+@app.route('/delete-todo/<int:todo_id>')
+def delete_todo(todo_id):
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM todos WHERE id = %s", (todo_id,))
+    mysql.connection.commit()
+    cur.close()
+    return redirect(url_for('edit_todo'))

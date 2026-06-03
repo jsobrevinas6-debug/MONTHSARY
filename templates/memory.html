@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>{{ memory[1] }} 🌸</title>
+<title>{{ memory['title'] }} 🌸</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
 </head>
@@ -16,17 +16,17 @@
 
   <div class="memory-detail-box">
     <div class="hero-roses">🌷</div>
-    <h2>{{ memory[1] }}</h2>
-    <p class="tagline">{{ memory[3] }}</p>
-    {% if memory[4] %}
-    <p class="memory-letter">{{ memory[4] }}</p>
+    <h2>{{ memory['title'] }}</h2>
+    <p class="tagline">{{ memory['date'] }}</p>
+    {% if memory['caption'] %}
+    <p class="memory-letter">{{ memory['caption'] }}</p>
     {% endif %}
   </div>
 
   <!-- Upload Section -->
   <div class="upload-section">
     <h3>Photos & Videos 📸</h3>
-    <form method="POST" action="/upload/{{ memory[0] }}" enctype="multipart/form-data">
+    <form method="POST" action="/upload/{{ memory['id'] }}" enctype="multipart/form-data">
       <div class="upload-who">
         <label><input type="radio" name="uploaded_by" value="Justin" checked/> Justin</label>
         <label><input type="radio" name="uploaded_by" value="Madea"/> Madea</label>
@@ -47,16 +47,16 @@
   <div class="media-grid">
     {% for item in media %}
     <div class="media-item">
-      {% if item[3] == 'photo' %}
-      <img src="{{ url_for('static', filename='uploads/' + item[2]) }}" alt="memory photo"/>
+      {% if item['file_type'] == 'photo' %}
+      <img src="{{ url_for('static', filename='uploads/' + item['filename']) }}" alt="memory photo"/>
       {% else %}
       <video controls>
-        <source src="{{ url_for('static', filename='uploads/' + item[2]) }}"/>
+        <source src="{{ url_for('static', filename='uploads/' + item['filename']) }}"/>
       </video>
       {% endif %}
       <div class="media-info">
-        <span>by {{ item[4] }}</span>
-        <a href="/delete-media/{{ item[0] }}/{{ memory[0] }}" class="delete-btn" onclick="return confirm('Delete this?')">🗑</a>
+        <span>by {{ item['uploaded_by'] }}</span>
+        <a href="/delete-media/{{ item['id'] }}/{{ memory['id'] }}" class="delete-btn" onclick="return confirm('Delete this?')">🗑</a>
       </div>
     </div>
     {% endfor %}
