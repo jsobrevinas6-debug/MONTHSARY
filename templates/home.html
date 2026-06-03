@@ -39,7 +39,7 @@
           {% for memory in memories %}
           <div class="memory-card-wrap">
             <div class="memory-menu">
-              <button class="three-dot-btn" onclick="toggleMenu(event, 'menu-{{ memory[\'id\'] }}')">⋮</button>
+              <button class="three-dot-btn" onclick="toggleMenu(event, 'menu-{{ memory["id"] }}')">⋮</button>
               <div class="menu-dropdown" id="menu-{{ memory['id'] }}">
                 <a href="/edit-memory/{{ memory['id'] }}">✏️ Edit</a>
                 <a href="/delete-memory/{{ memory['id'] }}" onclick="return confirm('Delete this memory?')">🗑️ Delete</a>
