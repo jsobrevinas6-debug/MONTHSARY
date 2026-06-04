@@ -138,7 +138,7 @@ def delete_memory(memory_id):
     cur.execute("SELECT filename FROM media WHERE memory_id = %s", (memory_id,))
     files = cur.fetchall()
     for row in files:
-        path = os.path.join(app.config['UPLOAD_FOLDER'], row[0])
+        path = os.path.join(app.config['UPLOAD_FOLDER'], row['filename'])
         if os.path.exists(path):
             os.remove(path)
     cur.execute("DELETE FROM media WHERE memory_id = %s", (memory_id,))
@@ -173,7 +173,7 @@ def delete_media(media_id, memory_id):
     cur.execute("SELECT filename FROM media WHERE id = %s", (media_id,))
     row = cur.fetchone()
     if row:
-        path = os.path.join(app.config['UPLOAD_FOLDER'], row[0])
+        path = os.path.join(app.config['UPLOAD_FOLDER'], row['filename'])
         if os.path.exists(path):
             os.remove(path)
         cur.execute("DELETE FROM media WHERE id = %s", (media_id,))
@@ -229,6 +229,29 @@ def toggle_todo(todo_id):
     mysql.connection.commit()
     cur.close()
     return {'status': 'success'}
+
+# ── Memories Page ──
+@app.route('/memories')
+def memories():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM memories ORDER BY monthsary_number ASC")
+    memories = cur.fetchall()
+    cur.close()
+    return render_template('memories.html', memories=memories)
+
+# ── Pictures Page ──
+@app.route('/pictures')
+def pictures():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM media ORDER BY uploaded_at DESC")
+    media = cur.fetchall()
+    cur.close()
+    return render_template('pictures.html', media=media)
+
+# ── Letter Page ──
+@app.route('/letter')
+def letter():
+    return render_template('letter.html')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

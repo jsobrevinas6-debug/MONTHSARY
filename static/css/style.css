@@ -232,6 +232,22 @@ button:hover, .add-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24
 .back-btn { align-self: flex-start; font-size: 0.85rem; color: var(--pink-dark); text-decoration: none; margin-bottom: 8px; display: inline-block; }
 .back-btn:hover { text-decoration: underline; }
 
+/* NAV MENU */
+.nav-menu {
+  position: absolute; top: 24px; right: 24px; z-index: 30;
+  display: flex; gap: 12px;
+}
+.nav-link {
+  padding: 10px 20px; border-radius: 50px;
+  background: rgba(255,255,255,0.85); border: 1px solid rgba(255,200,210,0.5);
+  color: var(--pink-dark); text-decoration: none; font-size: 0.85rem;
+  transition: all 0.2s; backdrop-filter: blur(10px);
+}
+.nav-link:hover {
+  background: rgba(255,230,235,0.9); transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(220,100,130,0.2);
+}
+
 @media (max-width: 480px) {
   .card, .form-card { padding: 36px 24px; }
   .counter-box, .memory-detail-box, .upload-section { padding: 28px 20px; }
