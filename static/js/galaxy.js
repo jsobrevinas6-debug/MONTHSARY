@@ -834,8 +834,8 @@ function moveDrag(x,y){
   if(!dragging) return;
   const dx=x-lastX, dy=y-lastY;
   lastX=x; lastY=y;
-  camTheta -= dx*0.006;
-  camPhi   = Math.max(PHI_MIN, Math.min(PHI_MAX, camPhi + dy*0.006));
+  camTheta -= dx*0.008;
+  camPhi   = Math.max(PHI_MIN, Math.min(PHI_MAX, camPhi + dy*0.008));
 }
 function endDrag(){
   dragging=false;
@@ -852,12 +852,12 @@ function pinchDist(touches){
 }
 
 // ── mouse ──
-canvas.addEventListener('mousedown', e=>{ startDrag(e.clientX,e.clientY); });
-window.addEventListener('mousemove',  e=>{ moveDrag(e.clientX,e.clientY); });
+canvas.addEventListener('mousedown', e=>{ e.preventDefault(); startDrag(e.clientX,e.clientY); }, {passive:false});
+window.addEventListener('mousemove',  e=>{ if(dragging) e.preventDefault(); moveDrag(e.clientX,e.clientY); }, {passive:false});
 window.addEventListener('mouseup',    ()=>endDrag());
 
 // mouse wheel zoom
-window.addEventListener('wheel', e=>{
+canvas.addEventListener('wheel', e=>{
   e.preventDefault();
   camRadius = Math.max(RADIUS_MIN, Math.min(RADIUS_MAX, camRadius + e.deltaY*0.25));
   autoOrbit=false;
