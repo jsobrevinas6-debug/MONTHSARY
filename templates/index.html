@@ -574,9 +574,8 @@
     const card = document.getElementById('front-card');
     card.classList.add('burst');
     setTimeout(() => {
-      document.getElementById("popup-overlay").classList.add("show");
-      startConfetti();
-    }, 380);
+      window.location.href = '/galaxy';
+    }, 420);
     return false;
   }
 

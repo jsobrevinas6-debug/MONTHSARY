@@ -1,6 +1,70 @@
 const R   = (a,b) => Math.random()*(b-a)+a;
 const TAU = Math.PI*2;
 
+/* ══════════════════════════════════════════
+   INTRO ANIMATION SYSTEM
+══════════════════════════════════════════ */
+let introState = 'cover'; // 'cover' -> 'burst' -> 'zoom' -> 'complete'
+let introStartTime = 0;
+const INTRO_TIMES = {
+  burst: 1.5,      // longer burst duration
+  zoom: 4.5        // longer, smoother zoom
+};
+
+// Camera animation values
+const CAM_START_DISTANCE = 600;  // not as far, smoother start
+const CAM_END_DISTANCE = 155;
+let currentCamDistance = CAM_START_DISTANCE;
+
+function easeOutExpo(t) {
+  return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+}
+
+function easeInOutQuad(t) {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+// Easing functions
+function easeOutElastic(t) {
+  const c4 = (2 * Math.PI) / 3;
+  return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+}
+
+function easeOutBack(t) {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+/* ── Performance & Device Detection ── */
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const PARTICLE_SCALE = isMobile ? 0.4 : 1.0; // 40% particles on mobile
+
+/* ── FPS Counter ── */
+const fpsEl = document.createElement('div');
+fpsEl.style.cssText = 'position:fixed;top:10px;left:10px;color:#ff69b4;font:14px monospace;z-index:999;background:rgba(0,0,0,0.5);padding:5px 10px;border-radius:5px;';
+document.body.appendChild(fpsEl);
+let lastTime = performance.now();
+let frames = 0;
+function updateFPS(){
+  frames++;
+  const now = performance.now();
+  if(now >= lastTime + 1000){
+    fpsEl.textContent = `FPS: ${Math.round(frames * 1000 / (now - lastTime))}`;
+    frames = 0;
+    lastTime = now;
+  }
+}
+
 /* ── renderer ─────────────────────────── */
 const canvas   = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
@@ -10,8 +74,8 @@ renderer.setSize(innerWidth,innerHeight);
 
 const scene  = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 3000);
-camera.position.set(0, 110, 120);
-camera.lookAt(0, 0, 0);
+camera.position.set(0, 90, 600); // start at smoother distance
+camera.lookAt(0, -20, 0);
 
 window.addEventListener('resize',()=>{
   renderer.setSize(innerWidth,innerHeight);
@@ -34,6 +98,64 @@ function glowTex(col, sz=64){
 const tPink  = glowTex('#ff4d9e',64);
 const tSoft  = glowTex('#ffaadd',64);
 const tWhite = glowTex('#ffffff',32);
+
+/* ══════════════════════════════════════════
+   EXPLOSION BURST PARTICLES (intro effect)
+   Moved here so it can safely reference
+   `scene` and `tWhite`, both defined above.
+══════════════════════════════════════════ */
+const BURST_N = 5000;  // more particles for smoother effect
+const burstP = new Float32Array(BURST_N * 3);
+const burstC = new Float32Array(BURST_N * 3);
+const burstS = new Float32Array(BURST_N);
+const burstV = []; // velocities
+
+for(let i = 0; i < BURST_N; i++) {
+  const i3 = i * 3;
+  burstP[i3] = 0;
+  burstP[i3+1] = -20;
+  burstP[i3+2] = 0;
+
+  // More varied colors
+  const colorChoice = Math.random();
+  if(colorChoice < 0.25) {
+    burstC[i3] = 1; burstC[i3+1] = 1; burstC[i3+2] = 1; // white
+  } else if(colorChoice < 0.65) {
+    burstC[i3] = 1; burstC[i3+1] = R(0.2, 0.5); burstC[i3+2] = R(0.7, 1.0); // pink
+  } else if(colorChoice < 0.85) {
+    burstC[i3] = 1; burstC[i3+1] = R(0.7, 1.0); burstC[i3+2] = R(0.2, 0.5); // gold
+  } else {
+    burstC[i3] = R(0.8, 1); burstC[i3+1] = R(0.5, 0.7); burstC[i3+2] = 1; // light blue
+  }
+
+  burstS[i] = R(1.5, 8);
+
+  // More varied velocities for smoother spread
+  const speed = R(15, 50);
+  const theta = R(0, TAU);
+  const phi = Math.acos(R(-1, 1));
+  burstV.push({
+    x: speed * Math.sin(phi) * Math.cos(theta),
+    y: speed * Math.sin(phi) * Math.sin(theta),
+    z: speed * Math.cos(phi)
+  });
+}
+
+const burstGeo = new THREE.BufferGeometry();
+burstGeo.setAttribute('position', new THREE.BufferAttribute(burstP, 3));
+burstGeo.setAttribute('color', new THREE.BufferAttribute(burstC, 3));
+burstGeo.setAttribute('size', new THREE.BufferAttribute(burstS, 1));
+const burstMat = new THREE.PointsMaterial({
+  vertexColors: true,
+  transparent: true,
+  opacity: 0,
+  map: tWhite,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  sizeAttenuation: true
+});
+const burstMesh = new THREE.Points(burstGeo, burstMat);
+scene.add(burstMesh);
 
 /* ── shader: galaxy disk ──────────────── */
 function makeGalaxyMat(tex){
@@ -209,10 +331,10 @@ for(let i=0;i<N;i++){
   const col=dn<.33 ? cA.clone().lerp(cB,dn*3)
            :dn<.66 ? cB.clone().lerp(cC,(dn-.33)*3)
            :          cC.clone().lerp(cD,(dn-.66)*3);
-  const br=R(1.0,1.4); // much brighter
+  const br=R(1.4,1.9); // much brighter to stand out inside ring
   gCol[i3]=col.r*br; gCol[i3+1]=col.g*br; gCol[i3+2]=col.b*br;
 
-  gSiz[i]=R(3,7); // even larger particles
+  gSiz[i]=R(4.5,9); // larger particles for visibility inside ring
   gPh[i] =R(0,TAU);
 }
 
@@ -223,6 +345,7 @@ diskGeo.setAttribute('size',    new THREE.BufferAttribute(gSiz,1));
 diskGeo.setAttribute('phase',   new THREE.BufferAttribute(gPh,1));
 const diskMat=makeGalaxyMat(tPink);
 const diskMesh=new THREE.Points(diskGeo,diskMat);
+diskMesh.position.y = -50;
 scene.add(diskMesh);
 
 // soft dust halo around the text letters - MUCH BRIGHTER
@@ -237,9 +360,9 @@ for(let i=0;i<HALO_N;i++){
   haloP[i3]  =Math.cos(a)*r+R(-6,6);
   haloP[i3+1]=R(-3.5,3.5);
   haloP[i3+2]=Math.sin(a)*r*(DISK_H/DISK_W)+R(-4,4);
-  const br=R(.35,.7); // much brighter
+  const br=R(.35,.6); // increased brightness for visibility inside ring
   haloC[i3]=1*br; haloC[i3+1]=0.4*br; haloC[i3+2]=0.8*br; // brighter pink
-  haloS[i]=R(1.5,4); // larger particles
+  haloS[i]=R(1.5,3.5); // slightly larger for glow effect inside ring
   haloPh[i]=R(0,TAU);
 }
 const haloGeo=new THREE.BufferGeometry();
@@ -249,6 +372,7 @@ haloGeo.setAttribute('size',    new THREE.BufferAttribute(haloS,1));
 haloGeo.setAttribute('phase',   new THREE.BufferAttribute(haloPh,1));
 const haloMat=makeGalaxyMat(tSoft);
 const haloMesh=new THREE.Points(haloGeo,haloMat);
+haloMesh.position.y = -50;
 scene.add(haloMesh);
 
 /* ══════════════════════════════════════════
@@ -257,11 +381,11 @@ scene.add(haloMesh);
    Purple, blue, pink, gold rotating orbit
 ══════════════════════════════════════════ */
 const ringGroup = new THREE.Group();
-ringGroup.position.y = -65; // moved far down from text for better visibility
+ringGroup.position.y = -50;
 scene.add(ringGroup);
 
 const RING_RADIUS = 72;
-const RING_N = 15000;
+const RING_N = Math.floor(15000 * PARTICLE_SCALE);
 const ringP = new Float32Array(RING_N*3);
 const ringC = new Float32Array(RING_N*3);
 const ringS = new Float32Array(RING_N);
@@ -273,17 +397,17 @@ for(let i=0; i<RING_N; i++){
   const radBase = RING_RADIUS + R(-10, 10); // wider radius variation
   const swirl = Math.sin(a * 5) * 6;
   const r = radBase + swirl;
-  
+
   ringP[i3]   = Math.cos(a) * r + R(-6, 6); // more horizontal spread
   ringP[i3+1] = R(-8, 8); // more vertical spread
   ringP[i3+2] = Math.sin(a) * r + R(-6, 6); // more depth spread
-  
+
   // ALL PINK colors
   const br = R(0.5, 1.0);
   ringC[i3]   = br; // full red
   ringC[i3+1] = R(0.2, 0.5)*br; // low-medium green
   ringC[i3+2] = R(0.6, 0.95)*br; // medium-high blue
-  
+
   ringS[i] = R(1.5, 5);
   ringPh[i] = R(0, TAU);
 }
@@ -297,7 +421,7 @@ const ringMat = makeGalaxyMat(tSoft);
 ringGroup.add(new THREE.Points(ringGeo, ringMat));
 
 // Nebula cloud layer - ALL PINK AND SPREAD WIDER
-const NEBULA_N = 8000;
+const NEBULA_N = Math.floor(8000 * PARTICLE_SCALE);
 const nebRingP = new Float32Array(NEBULA_N*3);
 const nebRingC = new Float32Array(NEBULA_N*3);
 const nebRingS = new Float32Array(NEBULA_N);
@@ -306,19 +430,19 @@ const nebRingPh = new Float32Array(NEBULA_N);
 for(let i=0; i<NEBULA_N; i++){
   const i3 = i*3;
   const a = R(0, TAU);
-  const r = RING_RADIUS + R(-30, 30); // much wider spread
-  
-  nebRingP[i3]   = Math.cos(a) * r + R(-15, 15);
-  nebRingP[i3+1] = R(-12, 12); // even more vertical spread
-  nebRingP[i3+2] = Math.sin(a) * r + R(-15, 15);
-  
+  const r = RING_RADIUS + R(-20, 20); // reduced spread to contain ring
+
+  nebRingP[i3]   = Math.cos(a) * r + R(-8, 8);
+  nebRingP[i3+1] = R(-6, 6); // reduced vertical spread
+  nebRingP[i3+2] = Math.sin(a) * r + R(-8, 8);
+
   // ALL PINK shades
   const br = R(0.3, 0.6);
   nebRingC[i3]   = 1*br; // full red
   nebRingC[i3+1] = R(0.15, 0.4)*br; // low green
   nebRingC[i3+2] = R(0.55, 0.85)*br; // medium-high blue
-  
-  nebRingS[i] = R(8, 22); // large soft particles
+
+  nebRingS[i] = R(5, 14); // smaller particles to reduce upward creep
   nebRingPh[i] = R(0, TAU);
 }
 
@@ -331,7 +455,7 @@ const nebRingMat = makeGalaxyMat(tSoft);
 ringGroup.add(new THREE.Points(nebRingGeo, nebRingMat));
 
 // Sparkling stars in the ring - ALL PINK AND SPREAD WIDE
-const RING_STARS_N = 5000;
+const RING_STARS_N = Math.floor(5000 * PARTICLE_SCALE);
 const rsP = new Float32Array(RING_STARS_N*3);
 const rsC = new Float32Array(RING_STARS_N*3);
 const rsS = new Float32Array(RING_STARS_N);
@@ -341,17 +465,17 @@ for(let i=0; i<RING_STARS_N; i++){
   const i3 = i*3;
   const a = R(0, TAU);
   const r = RING_RADIUS + R(-25, 25); // spread much wider
-  
+
   rsP[i3]   = Math.cos(a) * r + R(-12, 12);
   rsP[i3+1] = R(-10, 10); // more vertical spread
   rsP[i3+2] = Math.sin(a) * r + R(-12, 12);
-  
+
   // ALL PINK sparkles
   const pinkBr = R(0.7, 1.0);
   rsC[i3]   = pinkBr; // red channel full
   rsC[i3+1] = pinkBr * R(0.2, 0.5); // green low
   rsC[i3+2] = pinkBr * R(0.6, 0.9); // blue medium-high
-  
+
   rsS[i] = R(2, 8);
   rsPh[i] = R(0, TAU);
 }
@@ -364,7 +488,7 @@ rsGeo.setAttribute('phase', new THREE.BufferAttribute(rsPh, 1));
 const rsMat = makeSparkMat(tPink);
 ringGroup.add(new THREE.Points(rsGeo, rsMat));
 
-// Glowing energy trails
+// Glowing energy trails - positioned below text
 const TRAIL_N = 600;
 const trailP = new Float32Array(TRAIL_N*3);
 const trailC = new Float32Array(TRAIL_N*3);
@@ -375,17 +499,17 @@ for(let i=0; i<TRAIL_N; i++){
   const i3 = i*3;
   const a = R(0, TAU);
   const r = RING_RADIUS + R(-2, 2);
-  
+
   trailP[i3]   = Math.cos(a) * r;
-  trailP[i3+1] = R(-1.5, 1.5);
+  trailP[i3+1] = R(-12, -8); // moved below text (text is at y=0 relative to ringGroup)
   trailP[i3+2] = Math.sin(a) * r;
-  
+
   // Golden energy glow
   const br = R(0.6, 1.0);
   trailC[i3]   = br; // gold/white energy
   trailC[i3+1] = br * R(0.8, 0.95);
   trailC[i3+2] = br * R(0.3, 0.6);
-  
+
   trailS[i] = R(3, 8);
   trailPh[i] = R(0, TAU);
 }
@@ -402,7 +526,7 @@ ringGroup.add(new THREE.Points(trailGeo, trailMat));
    HEART GROUP — floats above the disk
 ══════════════════════════════════════════ */
 const heartGroup=new THREE.Group();
-heartGroup.position.y=52;
+heartGroup.position.y=10;
 scene.add(heartGroup);
 
 function heartXY(t){
@@ -472,7 +596,7 @@ heartGroup.add(new THREE.Points(spGeo,spMat));
 ══════════════════════════════════════════ */
 
 // ── deep field stars (dense, tiny, all colours) ──
-const BG_N = 18000;
+const BG_N = Math.floor(18000 * PARTICLE_SCALE);
 const bgP=new Float32Array(BG_N*3),bgC=new Float32Array(BG_N*3),bgS=new Float32Array(BG_N),bgPh=new Float32Array(BG_N);
 // realistic star colours: hot blue-white, sun-yellow, cool red-orange
 const STAR_COLS=['#b0c8ff','#ffffff','#fff4e0','#ffd090','#ff9060','#cce0ff','#e0f0ff'];
@@ -498,7 +622,7 @@ const bgStars=new THREE.Points(bgGeo,bgMat);
 scene.add(bgStars);
 
 // ── spiral arm stars (4 arms, realistic Milky Way colours) ──
-const ARM_N = 22000;
+const ARM_N = Math.floor(22000 * PARTICLE_SCALE);
 const armP=new Float32Array(ARM_N*3),armC=new Float32Array(ARM_N*3),armS=new Float32Array(ARM_N),armPh=new Float32Array(ARM_N);
 const ARM_COLS_INNER=['#ffe8c0','#ffd0a0','#ffeecc']; // warm core
 const ARM_COLS_MID  =['#c8e0ff','#b0ccff','#ddeeff']; // blue-white arms
@@ -615,13 +739,17 @@ scene.add(new THREE.Points(dgGeo,dgMat));
 
 // group all bg layers for unified slow rotation
 const bgGalaxy=new THREE.Group();
-bgGalaxy.add(bgStars,bgArms,bgCore,bgNebula);
+bgGalaxy.add(bgStars,bgArms,bgNebula); // removed bgCore from group
 // re-parent — remove from scene, add to group, add group
-[bgStars,bgArms,bgCore,bgNebula].forEach(m=>{ scene.remove(m); bgGalaxy.add(m); });
+[bgStars,bgArms,bgNebula].forEach(m=>{ scene.remove(m); bgGalaxy.add(m); }); // removed bgCore
 // tilt like a real edge-on galaxy view
 bgGalaxy.rotation.x=0.28;
 bgGalaxy.rotation.z=0.12;
 scene.add(bgGalaxy);
+
+// position bgCore independently below the text
+bgCore.position.y = -60;
+scene.add(bgCore);
 
 // ── twinkling foreground stars ──
 const ST_N=6000;
@@ -679,7 +807,7 @@ function updateLabels(t){
 let camTheta  = 0;       // horizontal angle (auto-orbit base)
 let camPhi    = 0.62;    // vertical angle from top (radians, 0=top π=bottom)
 let camRadius = 155;     // distance from target
-const CAM_TARGET = new THREE.Vector3(0,8,0);
+const CAM_TARGET = new THREE.Vector3(0,-20,0); // centered between heart and ring
 
 // smooth current values (lerped each frame)
 let sCamTheta  = 0;
@@ -770,6 +898,105 @@ canvas.addEventListener('touchend', e=>{
 },{passive:false});
 
 /* ══════════════════════════════════════════
+   INTRO ANIMATION TIMELINE
+══════════════════════════════════════════ */
+
+// Click handler for Enter button
+window.addEventListener('DOMContentLoaded', () => {
+  const introCover = document.getElementById('intro-cover');
+  const enterBtn = document.getElementById('enter-btn');
+  const homepageBtn = document.querySelector('.homepage-btn');
+
+  if (homepageBtn) homepageBtn.classList.add('hidden');
+
+  enterBtn?.addEventListener('click', () => {
+    introCover?.classList.add('fade-out');
+
+    setTimeout(() => {
+      introState = 'burst';
+      introStartTime = clock.getElapsedTime();
+      if (introCover) introCover.style.display = 'none';
+    }, 1000);
+  });
+});
+
+function updateIntro(t) {
+  if (introState === 'cover') {
+    return;
+  }
+
+  if (introState === 'burst') {
+    const elapsed = t - introStartTime;
+    const progress = Math.min(elapsed / INTRO_TIMES.burst, 1);
+
+    // Smoother flash curve with double peak
+    const flashCurve = Math.sin(progress * Math.PI * 0.8) * (1 - progress * 0.3);
+    burstMat.opacity = flashCurve * 0.95;
+
+    // Smoother expansion with easing
+    const expandEase = easeOutCubic(progress);
+    const pos = burstGeo.attributes.position.array;
+    for(let i = 0; i < BURST_N; i++) {
+      const i3 = i * 3;
+      pos[i3]   = burstV[i].x * expandEase * 3.0;
+      pos[i3+1] = -20 + burstV[i].y * expandEase * 3.0;
+      pos[i3+2] = burstV[i].z * expandEase * 3.0;
+    }
+    burstGeo.attributes.position.needsUpdate = true;
+
+    // Gentler camera shake
+    if (progress < 0.4) {
+      const shake = (0.4 - progress) * 4 * Math.sin(progress * 20);
+      camera.position.x += (Math.random() - 0.5) * shake;
+      camera.position.y += (Math.random() - 0.5) * shake;
+    }
+
+    if (progress >= 1) {
+      introState = 'zoom';
+      introStartTime = t;
+    }
+    return;
+  }
+
+  if (introState === 'zoom') {
+    const elapsed = t - introStartTime;
+    const progress = Math.min(elapsed / INTRO_TIMES.zoom, 1);
+
+    // Fade out burst smoothly during zoom
+    if (progress < 0.3) {
+      burstMat.opacity = (1 - progress / 0.3) * 0.4;
+    } else {
+      burstMat.opacity = 0;
+    }
+
+    // Ultra-smooth zoom with combination easing
+    const zoomEase = easeInOutQuad(easeOutExpo(progress));
+    currentCamDistance = CAM_START_DISTANCE + (CAM_END_DISTANCE - CAM_START_DISTANCE) * zoomEase;
+
+    const angle = sCamTheta || 0;
+    const phi = sCamPhi || 0.62;
+    camera.position.x = currentCamDistance * Math.sin(phi) * Math.sin(angle);
+    camera.position.y = currentCamDistance * Math.cos(phi);
+    camera.position.z = currentCamDistance * Math.sin(phi) * Math.cos(angle);
+    camera.lookAt(CAM_TARGET);
+
+    // Slower, smoother galaxy rotation
+    bgGalaxy.rotation.y = progress * Math.PI * 0.2;
+
+    if (progress >= 1) {
+      introState = 'complete';
+      scene.remove(burstMesh);
+      // Smooth fade-in of homepage button
+      const homepageBtn = document.querySelector('.homepage-btn');
+      if (homepageBtn) {
+        homepageBtn.classList.remove('hidden');
+      }
+    }
+    return;
+  }
+}
+
+/* ══════════════════════════════════════════
    ANIMATION LOOP
 ══════════════════════════════════════════ */
 const clock=new THREE.Clock();
@@ -780,8 +1007,17 @@ function animate(){
   const t=clock.getElapsedTime();
   const LERP=0.08;
 
+  if (introState !== 'complete') {
+    updateIntro(t);
+    updateFPS();
+    renderer.render(scene, camera);
+    return;
+  }
+
+  // Normal idle animation after intro
   // auto-orbit slowly advances theta when user isn't dragging
-  if(autoOrbit) camTheta+=0.00042;
+  if(autoOrbit && !prefersReducedMotion) camTheta+=0.00042;
+  else if(autoOrbit && prefersReducedMotion) camTheta+=0.0001; // slower for reduced motion
 
   // smooth lerp current → target
   sCamTheta  += (camTheta  - sCamTheta ) * LERP;
@@ -804,11 +1040,12 @@ function animate(){
   // background galaxy drifts very slowly
   bgGalaxy.rotation.y = t*0.004;
 
-  // heart floats
-  heartGroup.position.y = 52+Math.sin(t*0.72)*2.8;
+  // heart floats with compact range
+  heartGroup.position.y = 10+Math.sin(t*0.72)*2.8; // base position 10, was 52
 
   allMats.forEach(m=>m.uniforms.uTime.value=t);
   updateLabels(t*1000);
+  updateFPS();
   renderer.render(scene,camera);
 }
 
