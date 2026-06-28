@@ -852,13 +852,26 @@ function pinchDist(touches){
 }
 
 // ── mouse ──
-canvas.addEventListener('mousedown', e=>{ e.preventDefault(); startDrag(e.clientX,e.clientY); }, {passive:false});
-window.addEventListener('mousemove',  e=>{ if(dragging) e.preventDefault(); moveDrag(e.clientX,e.clientY); }, {passive:false});
-window.addEventListener('mouseup',    ()=>endDrag());
+document.addEventListener('mousedown', e=>{ 
+  if(e.target === canvas) {
+    e.preventDefault(); 
+    e.stopPropagation();
+    startDrag(e.clientX,e.clientY); 
+  }
+}, {passive:false});
+document.addEventListener('mousemove',  e=>{ 
+  if(dragging) {
+    e.preventDefault(); 
+    e.stopPropagation();
+    moveDrag(e.clientX,e.clientY); 
+  }
+}, {passive:false});
+document.addEventListener('mouseup', ()=>endDrag());
 
 // mouse wheel zoom
 canvas.addEventListener('wheel', e=>{
   e.preventDefault();
+  e.stopPropagation();
   camRadius = Math.max(RADIUS_MIN, Math.min(RADIUS_MAX, camRadius + e.deltaY*0.25));
   autoOrbit=false;
   clearTimeout(autoTimer);
